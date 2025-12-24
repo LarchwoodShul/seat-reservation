@@ -365,28 +365,64 @@ function collectSeats(){
   }return o;
 }
 function submitForm(){
+  if (isSubmitting) return; // ⛔ prevent double click
+
   try{
-    if(!firstName.value.trim())return showError("First Name is required");
-    if(!lastName.value.trim())return showError("Last Name is required");
-    if(!email.value.match(/.+@.+\..+/))return showError("Valid Email required");
-    if(!cellphone.value.trim())return showError("Cellphone is required");
+    if(!firstName.value.trim()) return showError("First Name is required");
+    if(!lastName.value.trim()) return showError("Last Name is required");
+    if(!email.value.match(/.+@.+\..+/)) return showError("Valid Email required");
+    if(!cellphone.value.trim()) return showError("Cellphone is required");
+
     for(let k in seatData){
       document.querySelectorAll(`#tbl_${k} tbody tr`).forEach(r=>{
         const i=r.querySelectorAll("input");
-        if(!i[0].value.trim()||!i[1].value.trim())throw showError("All seat fields required");
+        if(!i[0].value.trim() || !i[1].value.trim()){
+          throw showError("All seat Name and Age fields are required");
+        }
       });
     }
-  }catch{return;}
-  fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({userId,submissionId:crypto.randomUUID(),
-      firstName:firstName.value,lastName:lastName.value,email:email.value,
-      cellphone:cellphone.value,totalAmount:total,seats:collectSeats()})
-  }).then(()=>alert("Form submitted successfully"));
+  } catch {
+    return;
+  }
+
+  // ✅ lock submission
+  isSubmitting = true;
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>Submitting...`;
+
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      userId,
+      submissionId: crypto.randomUUID(),
+      firstName:firstName.value,
+      lastName:lastName.value,
+      email:email.value,
+      cellphone:cellphone.value,
+      totalAmount: total,
+      seats: collectSeats()
+    })
+  })
+  .then(()=>{
+    btn.innerHTML = "Submitted ✔";
+    alert("Form submitted successfully. Thank you!");
+  })
+  .catch(()=>{
+    showError("Submission failed. Please try again.");
+    btn.disabled = false;
+    btn.innerHTML = "Submit";
+    isSubmitting = false;
+  });
 }
 </script>
 
 </body>
 </html>
+
 
 
 
